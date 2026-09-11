@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Interativo - Responsabilidade Civil & Tutor IA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-full flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:justify-between md:h-16 py-3 md:py-0 justify-center items-center gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-gradient-to-tr from-brand-700 to-indigo-600 text-white rounded-lg shadow">
+                        <i class="fa-solid fa-scale-balanced text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-bold text-slate-900 leading-tight">JurisQuiz Pro</h1>
+                        </div>
+                        <p class="text-xs text-slate-500">Responsabilidade Civil - Direito Civil</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation Tabs -->
+                <nav class="flex flex-wrap justify-center gap-1 bg-slate-100 p-1 rounded-xl">
+                    <button id="tab-quiz" onclick="switchTab('quiz')" class="nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 bg-white text-slate-900 shadow-sm">
+                        <i class="fa-solid fa-list-check text-brand-600"></i>
+                        <span>Simulado (30)</span>
+                    </button>
+                    <button id="tab-cards" onclick="switchTab('cards')" class="nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-layer-group text-slate-400"></i>
+                        <span>Flashcards</span>
+                    </button>
+                    <button id="tab-resumo" onclick="switchTab('resumo')" class="nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-book-bookmark text-slate-400"></i>
+                        <span>Resumo</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ==================== SECTION 1: SIMULADO INTERATIVO ==================== -->
+        <section id="sec-quiz" class="block space-y-6">
+            <!-- Progress Bar & Score Banner -->
+            <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="w-full md:w-1/2">
+                    <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
+                        <span>Progresso do Simulado</span>
+                        <span id="quiz-progress-text">0 de 30 respondidas</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div id="quiz-progress-bar" class="bg-brand-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="text-center px-4 border-r border-slate-200">
+                        <span class="block text-2xl font-bold text-emerald-600" id="stat-correct">0</span>
+                        <span class="text-xs text-slate-500 font-medium">Acertos</span>
+                    </div>
+                    <div class="text-center px-4 border-r border-slate-200">
+                        <span class="block text-2xl font-bold text-rose-600" id="stat-wrong">0</span>
+                        <span class="text-xs text-slate-500 font-medium">Erros</span>
+                    </div>
+                    <button onclick="resetQuiz()" class="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition border border-slate-200">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Reiniciar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz List Container -->
+            <div id="quiz-questions-container" class="space-y-6">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 2: FLASHCARDS ==================== -->
+        <section id="sec-cards" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-brand-600 uppercase tracking-wider bg-brand-50 px-3 py-1 rounded-full">
+                        Card <span id="card-current-idx">1</span> / <span id="card-total-count">30</span>
+                    </span>
+                    <div class="space-x-2">
+                        <button onclick="shuffleCards()" class="text-xs text-slate-500 hover:text-brand-600 px-2 py-1 rounded">
+                            <i class="fa-solid fa-shuffle mr-1"></i> Embaralhar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Flip Card Container -->
+                <div class="flip-card h-80 w-full cursor-pointer mb-6" onclick="toggleCardFlip(this)">
+                    <div class="flip-card-inner h-full shadow-lg rounded-2xl border border-slate-200">
+                        <!-- Front (Question) -->
+                        <div class="flip-card-front bg-white p-8 flex flex-col justify-between items-center border border-slate-200">
+                            <span class="text-xs font-semibold text-slate-400">CLIQUE PARA VER A RESPOSTA</span>
+                            <p id="card-question-text" class="text-lg font-medium text-slate-800 my-auto text-center leading-relaxed">
+                                Carregando pergunta...
+                            </p>
+                            <i class="fa-solid fa-arrow-rotate-right text-slate-300 text-sm"></i>
+                        </div>
+                        <!-- Back (Answer & Explanation) -->
+                        <div class="flip-card-back bg-slate-900 text-white p-8 flex flex-col justify-between items-center overflow-y-auto">
+                            <span class="text-xs font-semibold text-brand-400">RESPOSTA CORRETA</span>
+                            <div class="my-auto space-y-3">
+                                <p id="card-answer-text" class="text-base font-bold text-emerald-400">
+                                    Resposta...
+                                </p>
+                                <p id="card-explanation-text" class="text-xs text-slate-300 leading-relaxed text-left border-t border-slate-800 pt-3">
+                                    Explicação...
+                                </p>
+                            </div>
+                            <i class="fa-solid fa-arrow-rotate-left text-slate-500 text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex justify-center items-center space-x-4">
+                    <button onclick="prevCard()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        <span>Anterior</span>
+                    </button>
+                    <button onclick="nextCard()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-xl shadow-sm transition flex items-center space-x-2">
+                        <span>Próximo</span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 3: RESUMO DE CONCEITOS ==================== -->
+        <section id="sec-resumo" class="hidden space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Conceitos Básicos -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center space-x-3 text-brand-600">
+                        <i class="fa-solid fa-book text-xl"></i>
+                        <h2 class="text-lg font-bold text-slate-900">1. Pressupostos Essenciais</h2>
+                    </div>
+                    <ul class="space-y-3 text-sm text-slate-600">
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Obrigação vs. Responsabilidade:</strong> A obrigação é o dever jurídico primário; a responsabilidade é o dever sucessivo de reparar em caso de violação da obrigação.
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Elementos Subjetivos:</strong> Conduta humana (ação/omissão), Culpa lato sensu (dolo ou culpa stricto sensu), Nexo Causal e Dano.
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Modalidades de Culpa:</strong> Imprudência (ação sem cautela), Negligência (omissão do dever de cuidado) e Imperícia (falta de conhecimento técnico).
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Nexo e Excludentes -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center space-x-3 text-brand-600">
+                        <i class="fa-solid fa-shield-halved text-xl"></i>
+                        <h2 class="text-lg font-bold text-slate-900">2. Nexo Causal & Excludentes</h2>
+                    </div>
+                    <ul class="space-y-3 text-sm text-slate-600">
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Teoria Adotada (Art. 403, CC):</strong> Teoria do Dano Direto e Imediato (Vínculo Necessário).
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Excludentes Absolutas:</strong> Culpa exclusiva da vítima, fato exclusivo de terceiro e caso fortuito/força maior externo.
+                        </li>
+                        <li class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <strong class="text-slate-800">Estado de Necessidade (Art. 929/930, CC):</strong> O ato é lícito, mas o causador deve indenizar o terceiro inocente e buscar regresso contra o culpado.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Database of Questions
+        const questionsData = [
+            {
+                id: 1,
+                question: "De acordo com a doutrina tradicional e o material da disciplina, qual é a distinção teórica entre os conceitos de obrigação e de responsabilidade civil?",
+                options: [
+                    "A obrigação é um dever jurídico originário, enquanto a responsabilidade é o dever jurídico sucessivo decorrente da violação do primeiro.",
+                    "A obrigação decorre exclusivamente de contratos, ao passo que a responsabilidade civil resulta apenas de atos ilícitos extraterritoriais.",
+                    "Não há distinção teórica, sendo termos sinônimos empregados indistintamente pelo Código Civil brasileiro.",
+                    "A obrigação exige a demonstração de culpa para sua configuração, enquanto a responsabilidade é sempre objetiva."
+                ],
+                answer: 0,
+                explanation: "Segundo a doutrina (Sergio Cavalieri Filho, Fernando Noronha), a obrigação é o dever jurídico originário, primário. Já a responsabilidade é a consequência jurídica patrimonial (dever sucessivo/secundário) decorrente do descumprimento ou violação desse dever originário."
+            },
+            {
+                id: 2,
+                question: "A responsabilidade civil subjetiva assenta-se em elementos essenciais para que surja o dever de indenizar. Assinale a alternativa que apresenta corretamente todos os seus elementos constitutivos:",
+                options: [
+                    "Apenas a culpa do agente e o dano comprovado.",
+                    "Conduta humana, culpa em sentido amplo (lato sensu), nexo de causalidade e dano ou prejuízo.",
+                    "Ato ilícito contratual, dolo direto, ilicitude estrita e ausência de excludentes.",
+                    "Conduta omissiva, nexo de imputação, fortuito interno e nexo de causalidade."
+                ],
+                answer: 1,
+                explanation: "Os 4 elementos constitutivos da responsabilidade civil subjetiva são: 1) Conduta humana (ação ou omissão); 2) Culpa lato sensu (abrangendo dolo e culpa em sentido estrito); 3) Nexo de causalidade (elo entre a conduta e o resultado); 4) Dano ou prejuízo."
+            },
+            {
+                id: 3,
+                question: "Um profissional da medicina, ao realizar um procedimento cirúrgico complexo, atua sem possuir a qualificação técnica exigida e o conhecimento específico comprovado para a técnica aplicada. Essa conduta caracteriza:",
+                options: [
+                    "Negligência.",
+                    "Imprudência.",
+                    "Imperícia.",
+                    "Dolo eventual."
+                ],
+                answer: 2,
+                explanation: "Imperícia é a ausência de conhecimento técnico, habilidade ou qualificação indispensável para a prática de determinada arte, profissão ou ofício."
+            },
+            {
+                id: 4,
+                question: "Quanto ao nexo de causalidade, qual foi a teoria expressamente adotada pelo Código Civil brasileiro no seu artigo 403 para delimitar a obrigação de indenizar?",
+                options: [
+                    "Teoria da equivalência das condições (conditio sine qua non).",
+                    "Teoria da causalidade adequada.",
+                    "Teoria do dano direto e imediato (ou do vínculo necessário).",
+                    "Teoria da causa determinante estrita."
+                ],
+                answer: 2,
+                explanation: "O art. 403 do Código Civil positivou a Teoria do Dano Direto e Imediato (também chamada de Teoria da Causalidade Necessária), exigindo um vínculo de causalidade direta entre a conduta e o dano sofrido."
+            },
+            {
+                id: 5,
+                question: "Um motorista, trafegando regularmente, efetua uma manobra brusca e atinge o muro de um imóvel residencial para evitar o atropelamento de uma criança que atravessou a via inesperadamente. À luz dos arts. 188, II, 929 e 930 do Código Civil, assinale a solução jurídica correta:",
+                options: [
+                    "O ato é ilícito, devendo o motorista responder criminalmente e civilmente sem direito de regresso.",
+                    "O ato é lícito, eximindo o motorista de qualquer obrigação de indenizar o proprietário do muro.",
+                    "O ato é lícito, mas o motorista deve indenizar o dono do muro inocente, cabendo-lhe ação regressiva contra os responsáveis pela criança.",
+                    "O proprietário do muro deve suportar o prejuízo sem direito a reparação, por se tratar de força maior."
+                ],
+                answer: 2,
+                explanation: "No estado de necessidade (art. 188, II), a remoção de perigo iminente afasta a ilicitude do ato. Contudo, em virtude dos arts. 929 e 930 do CC, se o dono da coisa destruída não for o responsável pela situação de perigo (terceiro inocente), o causador direto do dano deve indenizá-lo, garantindo-se o direito de regresso contra quem criou a situação de risco."
+            },
+            {
+                id: 6,
+                question: "A respeito da responsabilidade civil objetiva, positivada no artigo 927, parágrafo único, do Código Civil, é correto afirmar que:",
+                options: [
+                    "Exige sempre a prova da culpa grave do causador do dano.",
+                    "Funda-se na Teoria do Risco nos casos especificados em lei ou quando a atividade normalmente desenvolvida implicar risco aos direitos de outrem.",
+                    "Aplica-se exclusivamente às relações regidas pelo Código de Defesa do Consumidor.",
+                    "Exclui a possibilidade de aplicação de causas excludentes do nexo causal."
+                ],
+                answer: 1,
+                explanation: "O art. 927, parágrafo único, consagra a cláusula geral de responsabilidade civil objetiva fundada na Teoria do Risco, aplicável nos casos previstos em lei ou quando a atividade habitualmente desenvolvida pelo agente implicar risco aos direitos alheios."
+            },
+            {
+                id: 7,
+                question: "Em um acidente de trânsito causado por imprudência de um motorista, um condutor de veículo de aplicativo fica impossibilitado de trabalhar por dois meses. Os ganhos que ele comprovadamente deixou de auferir nesse período classificam-se como:",
+                options: [
+                    "Danos emergentes.",
+                    "Lucros cessantes.",
+                    "Perda de uma chance intangível.",
+                    "Dano moral in re ipsa."
+                ],
+                answer: 1,
+                explanation: "Os lucros cessantes correspondem a tudo aquilo que a vítima comprovadamente deixou de auferir/ganhar como consequência direta do evento danoso."
+            },
+            {
+                id: 8,
+                question: "De acordo com as Súmulas do Superior Tribunal de Justiça (STJ) citadas no material de estudo sobre responsabilidade civil, assinale a afirmativa correta:",
+                options: [
+                    "É vedada a cumulação de danos materiais e danos morais oriundos do mesmo fato.",
+                    "São cumuláveis as indenizações por dano material e dano moral oriundos do mesmo fato.",
+                    "O dano estético exclui o cabimento da indenização por dano moral.",
+                    "A pessoa jurídica não possui honra objetiva, sendo incapaz de sofrer dano moral."
+                ],
+                answer: 1,
+                explanation: "A Súmula 37 do STJ estabelece expressamente: 'São cumuláveis as indenizações por dano material e dano moral oriundos do mesmo fato'."
+            },
+            {
+                id: 9,
+                question: "Um objeto de vidro é lançado da janela de um edifício residencial de vários andares, atingindo um pedestre na calçada. Não sendo possível identificar o apartamento exato do qual o objeto caiu (effusis et dejectis), o Código Civil (art. 938) e a jurisprudência estabelecem que:",
+                options: [
+                    "O pedestre lesado não poderá receber indenização por ausência de identificação do causador direto.",
+                    "A responsabilidade é objetiva, devendo responder os moradores do condomínio ou da ala de onde o objeto poderia ter sido lançado.",
+                    "O síndico responderá pessoalmente e de forma subjetiva com seu patrimônio próprio.",
+                    "Trata-se de caso fortuito, exonerando todos os ocupantes do prédio de qualquer reparação."
+                ],
+                answer: 1,
+                explanation: "Pela regra da actio de effusis et dejectis (art. 938 do CC), a responsabilidade da habitante da unidade/edifício é objetiva. Se não for possível identificar a unidade causadora, a coletividade de moradores do condomínio (ou bloco correspondente) responde solidariamente."
+            },
+            {
+                id: 10,
+                question: "Dentre as causas que interferem na relação de causalidade, assinale a hipótese que afasta de forma absoluta o nexo causal e exime completamente o réu do dever de indenizar:",
+                options: [
+                    "A culpa concorrente da vítima.",
+                    "O fortuito interno inerente aos riscos da própria atividade do fornecedor.",
+                    "A culpa exclusiva da vítima na ocorrência do evento danoso.",
+                    "A alegação genérica de ausência de dolo."
+                ],
+                answer: 2,
+                explanation: "A culpa exclusiva da vítima (ou fato exclusivo da vítima) rompe totalmente o nexo de causalidade entre a conduta do réu e o resultado danoso, afastando completamente o dever de indenizar."
+            },
+            {
+                id: 11,
+                question: "No âmbito da responsabilidade civil dos profissionais liberais (como advogados e médicos), assinale a regra geral prevista no Código de Defesa do Consumidor (art. 14, § 4º):",
+                options: [
+                    "A responsabilidade é objetiva, fundada na Teoria do Risco Integral.",
+                    "A responsabilidade pessoal dos profissionais liberais será apurada mediante a verificação de culpa (responsabilidade subjetiva).",
+                    "Há presunção absoluta de dolo em qualquer erro de diagnóstico ou tese jurídica.",
+                    "Eles não se submetem a nenhuma norma de reparação de danos."
+                ],
+                answer: 1,
+                explanation: "O art. 14, § 4º do CDC estabelece que 'A responsabilidade pessoal dos profissionais liberais será apurada mediante a verificação de culpa', constituindo exceção subjetiva ao sistema geral de responsabilidade objetiva do CDC."
+            },
+            {
+                id: 12,
+                question: "Qual o entendimento consolidado na Súmula 387 do Superior Tribunal de Justiça (STJ) a respeito do dano estético?",
+                options: [
+                    "É lícita a cumulação das indenizações de dano estético e dano moral.",
+                    "O dano estético absorve integralmente o dano moral, sendo vedada a dupla reparação.",
+                    "O dano estético só é indenizável se houver prejuízo patrimonial direto.",
+                    "O dano estético é incompatível com os direitos da personalidade."
+                ],
+                answer: 0,
+                explanation: "A Súmula 387 do STJ prevê que 'É lícita a cumulação das indenizações de dano estético e dano moral', reconhecendo a autonomias das lesões aos direitos da personalidade."
+            },
+            {
+                id: 13,
+                question: "A teoria da 'Perda de uma Chance' (perte d'une chance) exige, para a concessão da reparação civil, que a chance perdida seja:",
+                options: [
+                    "Hipotética, remota e de concretização incerta.",
+                    "Real, séria e com probabilidade razoável de obtenção do resultado esperado.",
+                    "Equivalente exatamente ao valor total do benefício final almejado.",
+                    "Baseada unicamente em lucros cessantes de eventos futuros indeterminados."
+                ],
+                answer: 1,
+                explanation: "Para a aplicação da teoria da perda de uma chance, o dano deve ser real e atual; a oportunidade perdida deve ser séria e ter probabilidade razoável (não meramente hipotética) de ser alcançada."
+            },
+            {
+                id: 14,
+                question: "O conceito de 'Fortuito Interno', amplamente utilizado na jurisprudência relativa às instituições financeiras e transportadores, caracteriza-se por:",
+                options: [
+                    "Um evento imprevisível e inevitável totalmente estranho à atividade desenvolvida, rompendo o nexo de causalidade.",
+                    "Fatos ligados aos riscos da própria atividade, organização ou estrutura do negócio, que não excluem o dever de indenizar.",
+                    "Um ato praticado com dolo direto por terceiro totalmente desconhecido.",
+                    "Causa de excludente absoluta de responsabilidade civil em todas as hipóteses."
+                ],
+                answer: 1,
+                explanation: "Fortuito interno é o fato imprevisível ou inevitável que se insere no desdobramento normal da atividade do agente (ex: fraudes bancárias, defeitos mecânicos), não afastando a responsabilidade objetiva do prestador."
+            },
+            {
+                id: 15,
+                question: "Nos termos do art. 932 do Código Civil, a responsabilidade dos pais pelos atos praticados pelos filhos menores que estiverem sob sua autoridade e em sua companhia é:",
+                options: [
+                    "Subjetiva, exigindo a demonstração de culpa in vigilando dos pais.",
+                    "Objetiva, não dependendo de prova de culpa dos pais (art. 933 do CC).",
+                    "Subsidiária, só podendo ser exigida após o esgotamento dos bens do menor.",
+                    "Inexistente, respondendo o menor com exclusividade."
+                ],
+                answer: 1,
+                explanation: "O art. 933 do Código Civil estabelece que as pessoas indicadas nos incisos I a V do art. 932 (incluindo os pais em relação aos filhos menores) responderão objetivamente, independentemente de culpa."
+            },
+            {
+                id: 16,
+                question: "Na hipótese de responsabilidade civil por ato de terceiro (art. 932 do CC), aquele que pagar a indenização pelo dano causado por outrem:",
+                options: [
+                    "Nunca terá direito de regresso contra o causador direto do dano.",
+                    "Poderá reaver o que pagou do causador do dano, salvo se este for seu descendente, absoluta ou relativamente incapaz (art. 934, CC).",
+                    "Terá direito de regresso amplo e irrestrito, inclusive contra filhos menores sem patrimônio.",
+                    "Deverá dividir a dívida solidariamente sem direito de reembolso."
+                ],
+                answer: 1,
+                explanation: "Art. 934 do CC: Aquele que ressarcir o dano causado por outrem pode reaver o que pagou daquele por quem pagou, salvo se o causador for seu descendente, absoluta ou relativamente incapaz."
+            },
+            {
+                id: 17,
+                question: "Segundo a Súmula 227 do STJ, em relação aos direitos da honra e à reparação civil, estabelece-se que:",
+                options: [
+                    "A pessoa jurídica pode sofrer dano moral.",
+                    "Apenas pessoas físicas podem ser vítimas de dano moral.",
+                    "O dano moral da pessoa jurídica exige obrigatoriamente a comprovação de dor psíquica dos sócios.",
+                    "Pessoas jurídicas de direito público não possuem direito a indenizações."
+                ],
+                answer: 0,
+                explanation: "Súmula 227 do STJ: 'A pessoa jurídica pode sofrer dano moral' (ao afetar sua honra objetiva, nome, reputação e imagem no mercado)."
+            },
+            {
+                id: 18,
+                question: "A Súmula 479 do STJ define a responsabilidade das instituições financeiras nos seguintes termos:",
+                options: [
+                    "Respondem subjetivamente pelos danos gerados por fortuito interno relativo a fraudes e delitos praticados por terceiros no âmbito de operações bancárias.",
+                    "Respondem objetivamente pelos danos gerados por fortuito interno relativo a fraudes e delitos praticados por terceiros no âmbito de operações bancárias.",
+                    "Ficam isentas de responsabilidade em caso de fraude praticada por estelionatários.",
+                    "Só respondem se ficar comprovada a cumplicidade de empregados do banco."
+                ],
+                answer: 1,
+                explanation: "Súmula 479 do STJ: 'As instituições financeiras respondem objetivamente pelos danos gerados por fortuito interno relativo a fraudes e delitos praticados por terceiros no âmbito de operações bancárias'."
+            },
+            {
+                id: 19,
+                question: "Em caso de responsabilidade civil extracontratual por ato ilícito (dano moral ou material), a incidência dos juros de mora conta-se a partir de qual momento, conforme a Súmula 54 do STJ?",
+                options: [
+                    "Da data da citação válida.",
+                    "Do trânsito em julgado da sentença condenatória.",
+                    "Desde a data do evento danoso.",
+                    "Do ajuizamento da ação indenizatória."
+                ],
+                answer: 2,
+                explanation: "Súmula 54 do STJ: 'Os juros moratórios fluem a partir do evento danoso, em caso de responsabilidade extracontratual'."
+            },
+            {
+                id: 20,
+                question: "A Súmula 362 do STJ define o termo inicial para a correção monetária do valor da indenização do dano moral. Esse termo é:",
+                options: [
+                    "A data do evento danoso.",
+                    "A data do ajuizamento da petição inicial.",
+                    "A data do arbitramento da indenização (ex: data da sentença ou acórdão).",
+                    "A data da citação do réu."
+                ],
+                answer: 2,
+                explanation: "Súmula 362 do STJ: 'A correção monetária do valor da indenização do dano moral incide desde a data do arbitramento'."
+            },
+            {
+                id: 21,
+                question: "A responsabilidade civil do transportador de pessoas em relação aos passageiros é de natureza objetiva. De acordo com o art. 735 do Código Civil e a Súmula 187 do STF, o fato de terceiro exime a responsabilidade do transportador?",
+                options: [
+                    "Sim, o fato de terceiro sempre afasta o dever de indenizar do transportador.",
+                    "Não, a responsabilidade do transportador por acidente com o passageiro não é elidida por culpa de terceiro, contra o qual tem ação regressiva.",
+                    "Apenas se o terceiro agir com dolo comprovado.",
+                    "Apenas nos contratos de transporte gratuito de cortesia pura."
+                ],
+                answer: 1,
+                explanation: "Art. 735, CC e Súmula 187/STF: A responsabilidade contratual do transportador por acidentes com passageiros não é elidida por culpa de terceiro (fortuito interno de transporte), cabendo ao transportador ação regressiva contra o culpado."
+            },
+            {
+                id: 22,
+                question: "Conforme o art. 944 do Código Civil, a indenização mede-se pela:",
+                options: [
+                    "Gravidade da culpa do agente causador.",
+                    "Extensão do dano.",
+                    "Capacidade econômica exclusiva do réu.",
+                    "Vontade intencional ou dolo do causador."
+                ],
+                answer: 1,
+                explanation: "Art. 944, caput, do Código Civil: 'A indenização mede-se pela extensão do dano' (princípio da reparação integral)."
+            },
+            {
+                id: 23,
+                question: "O art. 944, parágrafo único, do Código Civil traz uma importante mitigação ao princípio da reparação integral ao prever que:",
+                options: [
+                    "Se houver excessiva desproporção entre a gravidade da culpa e o dano, o juiz poderá reduzir equitativamente a indenização.",
+                    "O juiz deve triplicar o valor se o agente for pessoa jurídica de grande porte.",
+                    "A indenização por dano moral é limitada ao valor máximo de 100 salários mínimos.",
+                    "A culpa leve extingue totalmente o dever de reparação."
+                ],
+                answer: 0,
+                explanation: "Art. 944, parágrafo único do CC: 'Se houver excessiva desproporção entre a gravidade da culpa e o dano, poderá o juiz reduzir, equitativamente, a indenização'."
+            },
+            {
+                id: 24,
+                question: "O que caracteriza a figura do 'Dano Moral in re ipsa'?",
+                options: [
+                    "Aquele que exige rigorosa prova pericial de sofrimento psicológico e laudos psiquiátricos.",
+                    "Aquele em que o dano é presumido pela própria violação do fato ilícito, dispensando a prova do prejuízo concreto.",
+                    "Aquele que atinge apenas direitos patrimoniais de pessoas jurídicas públicas.",
+                    "Aquele decorrente exclusivamente de rescisão de contratos trabalhistas."
+                ],
+                answer: 1,
+                explanation: "Dano moral in re ipsa é aquele que decorre da própria gravidade do fato ilícito (presumido pela força dos fatos), prescindindo de prova objetiva da dor ou do sofrimento psicológico."
+            },
+            {
+                id: 25,
+                question: "Em matéria de transporte amador de cortesia ou carona simples, a Súmula 145 do STJ estabelece que o transportador desinteressado só responde por danos causados ao transportado quando incidir em:",
+                options: [
+                    "Culpa levíssima.",
+                    "Dolo ou culpa grave.",
+                    "Qualquer grau de culpa simples.",
+                    "Responsabilidade objetiva integral."
+                ],
+                answer: 1,
+                explanation: "Súmula 145 do STJ: 'No transporte desinteressado, de cortesia, o transportador só responde por danos causados ao transportado quando incorrer em dolo ou culpa grave'."
+            },
+            {
+                id: 26,
+                question: "Nos termos do art. 936 do Código Civil, o dono ou detentor do animal ressarcirá o dano por este causado:",
+                options: [
+                    "Apenas se for provada a sua negligência na guarda do animal.",
+                    "Se não provar culpa da vítima ou força maior (responsabilidade objetiva do detentor).",
+                    "Apenas se o animal for de espécie comprovadamente feroz.",
+                    "Ficando isento se o animal estiver em área rural."
+                ],
+                answer: 1,
+                explanation: "Art. 936, CC: 'O dono, ou detentor, do animal ressarcirá o dano por este causado, se não provar culpa da vítima ou força maior' (trata-se de responsabilidade objetiva)."
+            },
+            {
+                id: 27,
+                question: "Em caso de cumplicidade ou pluralidade de autores na prática de um ato ilícito danoso, a obrigação de reparar o dano (conforme art. 942 do CC) é:",
+                options: [
+                    "Fracionada proporcionalmente entre os autores sem vínculo entre eles.",
+                    "Solidária entre todos os coautores e compartícipes.",
+                    "Subsidiária, respondendo apenas o autor principal.",
+                    "Anulada por incerteza de autoria."
+                ],
+                answer: 1,
+                explanation: "Art. 942, caput e parágrafo único do CC: Os bens do responsável pela reparação do dano ficam sujeitos à execução; se houver mais de um autor, todos responderão solidariamente pela reparação."
+            },
+            {
+                id: 28,
+                question: "Em caso de homicídio culposo, a indenização civil (art. 948 do CC) deve abranger, sem prejuízo de outras reparações:",
+                options: [
+                    "Apenas as despesas de funeral.",
+                    "O pagamento das despesas com o tratamento da vítima, seu funeral e a prestação de alimentos às pessoas a quem o morto os devia.",
+                    "A transferência automática de todos os bens do causador para os herdeiros.",
+                    "Apenas lucros cessantes da empresa da vítima."
+                ],
+                answer: 1,
+                explanation: "Art. 948 do CC: No caso de homicídio, a indenização consiste: I - no pagamento das despesas com o tratamento da vítima, seu funeral e o luto da família; II - na prestação de alimentos às pessoas a quem o morto os devia."
+            },
+            {
+                id: 29,
+                question: "A respeito da responsabilidade civil por ruína de edifício ou construção (art. 937 do Código Civil), é correto afirmar que responde pelos danos:",
+                options: [
+                    "O construtor, de forma subjetiva, dependendo de perícia judicial prévia.",
+                    "O dono do prédio ou construção, se esta provier de falta de reparos cuja necessidade fosse manifesta.",
+                    "O município que concedeu o alvará de habite-se de forma exclusiva.",
+                    "Os inquilinos locatários que habitavam o imóvel."
+                ],
+                answer: 1,
+                explanation: "Art. 937 do CC: 'O dono de edifício ou construção responde pelos danos que resultarem de sua ruína, se esta provier de falta de reparos, cuja necessidade fosse manifesta'."
+            },
+            {
+                id: 30,
+                question: "Qual a consequência jurídica reconhecida quando a vítima também concorre culposamente para o evento danoso (culpa concorrente, art. 945 do CC)?",
+                options: [
+                    "O réu fica totalmente isento de qualquer indenização.",
+                    "A indenização será fixada tendo-se em conta a gravidade da culpa da vítima em confronto com a do autor do dano (redução proporcional).",
+                    "A vítima perde o direito de ação e deve pagar custas ao réu.",
+                    "A responsabilidade converte-se em punitiva criminal obrigatória."
+                ],
+                answer: 1,
+                explanation: "Art. 945 do CC: 'Se a vítima tiver concorrido culposamente para o evento danoso, a sua indenização será fixada tendo-se em conta a gravidade de sua culpa em confronto com a do autor do dano' (redução proporcional)."
+            }
+        ];
+
+        // State variables
+        let userAnswers = {}; // { qId: optionIndex }
+        let currentCardIndex = 0;
+
+        // Render Quiz Questions
+        function renderQuiz() {
+            const container = document.getElementById('quiz-questions-container');
+            container.innerHTML = '';
+
+            questionsData.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4";
+                card.id = `q-card-${q.id}`;
+
+                let optionsHtml = '';
+                q.options.forEach((opt, oIdx) => {
+                    optionsHtml += `
+                        <label onclick="selectOption(${q.id}, ${oIdx})" class="quiz-option-${q.id} flex items-start space-x-3 p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition text-sm text-slate-700">
+                            <input type="radio" name="q_${q.id}" value="${oIdx}" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                            <span class="leading-snug">${opt}</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-4 border-b border-slate-100 pb-3">
+                        <span class="text-xs font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-lg">Questão ${idx + 1} de 30</span>
+                        <span id="badge-${q.id}" class="hidden text-xs font-semibold px-2.5 py-1 rounded-lg"></span>
+                    </div>
+                    <h3 class="font-semibold text-slate-900 text-base leading-relaxed">${q.question}</h3>
+                    <div class="space-y-2.5">${optionsHtml}</div>
+                    
+                    <!-- Feedback Box -->
+                    <div id="feedback-${q.id}" class="hidden mt-4 p-4 rounded-xl border text-xs leading-relaxed space-y-3">
+                        <div>
+                            <p class="font-bold mb-1" id="feedback-title-${q.id}"></p>
+                            <p id="feedback-text-${q.id}">${q.explanation}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Option Selection Handler
+        function selectOption(qId, optionIdx) {
+            if (userAnswers.hasOwnProperty(qId)) return; // Lock question after answer
+
+            userAnswers[qId] = optionIdx;
+            const q = questionsData.find(item => item.id === qId);
+            const isCorrect = optionIdx === q.answer;
+
+            // Update UI for options
+            const labels = document.querySelectorAll(`.quiz-option-${qId}`);
+            labels.forEach((lbl, idx) => {
+                lbl.classList.remove('hover:bg-slate-50', 'cursor-pointer');
+                lbl.onclick = null;
+                const radio = lbl.querySelector('input');
+                radio.disabled = true;
+
+                if (idx === q.answer) {
+                    lbl.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-900', 'font-medium');
+                } else if (idx === optionIdx && !isCorrect) {
+                    lbl.classList.add('bg-rose-50', 'border-rose-400', 'text-rose-900');
+                }
+            });
+
+            // Update Badge & Feedback Box
+            const badge = document.getElementById(`badge-${qId}`);
+            const feedback = document.getElementById(`feedback-${qId}`);
+            const fbTitle = document.getElementById(`feedback-title-${qId}`);
+
+            badge.classList.remove('hidden');
+            feedback.classList.remove('hidden');
+
+            if (isCorrect) {
+                badge.className = "text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800";
+                badge.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Correto';
+                feedback.className = "mt-4 p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs leading-relaxed space-y-3";
+                fbTitle.innerText = "Excelente! Explicação:";
+            } else {
+                badge.className = "text-xs font-semibold px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800";
+                badge.innerHTML = '<i class="fa-solid fa-xmark mr-1"></i> Incorreto';
+                feedback.className = "mt-4 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-900 text-xs leading-relaxed space-y-3";
+                fbTitle.innerText = "Incorreto. Explicação Fundamentada:";
+            }
+
+            updateStats();
+        }
+
+        // Stats and Progress Calculation
+        function updateStats() {
+            const answeredCount = Object.keys(userAnswers).length;
+            let correctCount = 0;
+            let wrongCount = 0;
+
+            Object.keys(userAnswers).forEach(qId => {
+                const q = questionsData.find(item => item.id == qId);
+                if (userAnswers[qId] === q.answer) {
+                    correctCount++;
+                } else {
+                    wrongCount++;
+                }
+            });
+
+            document.getElementById('stat-correct').innerText = correctCount;
+            document.getElementById('stat-wrong').innerText = wrongCount;
+            document.getElementById('quiz-progress-text').innerText = `${answeredCount} de 30 respondidas`;
+            
+            const pct = Math.round((answeredCount / 30) * 100);
+            document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
+        }
+
+        // Reset Quiz
+        function resetQuiz() {
+            userAnswers = {};
+            updateStats();
+            renderQuiz();
+        }
+
+        // ==================== FLASHCARDS LOGIC ====================
+        function updateCardDisplay() {
+            const card = questionsData[currentCardIndex];
+            document.getElementById('card-current-idx').innerText = currentCardIndex + 1;
+            document.getElementById('card-question-text').innerText = card.question;
+            document.getElementById('card-answer-text').innerText = card.options[card.answer];
+            document.getElementById('card-explanation-text').innerText = card.explanation;
+
+            // Reset flip state
+            const flipCardElem = document.querySelector('.flip-card');
+            if (flipCardElem) flipCardElem.classList.remove('flipped');
+        }
+
+        function toggleCardFlip(elem) {
+            elem.classList.toggle('flipped');
+        }
+
+        function nextCard() {
+            currentCardIndex = (currentCardIndex + 1) % questionsData.length;
+            updateCardDisplay();
+        }
+
+        function prevCard() {
+            currentCardIndex = (currentCardIndex - 1 + questionsData.length) % questionsData.length;
+            updateCardDisplay();
+        }
+
+        function shuffleCards() {
+            questionsData.sort(() => Math.random() - 0.5);
+            currentCardIndex = 0;
+            updateCardDisplay();
+        }
+
+        // ==================== TAB NAVIGATION ====================
+        function switchTab(tabName) {
+            const secQuiz = document.getElementById('sec-quiz');
+            const secCards = document.getElementById('sec-cards');
+            const secResumo = document.getElementById('sec-resumo');
+
+            const tabQuiz = document.getElementById('tab-quiz');
+            const tabCards = document.getElementById('tab-cards');
+            const tabResumo = document.getElementById('tab-resumo');
+
+            // Hide all
+            secQuiz.classList.add('hidden');
+            secCards.classList.add('hidden');
+            secResumo.classList.add('hidden');
+
+            // Reset button styles
+            [tabQuiz, tabCards, tabResumo].forEach(btn => {
+                btn.className = "nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center space-x-2";
+            });
+
+            // Activate chosen tab
+            if (tabName === 'quiz') {
+                secQuiz.classList.remove('hidden');
+                tabQuiz.className = "nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 bg-white text-slate-900 shadow-sm";
+            } else if (tabName === 'cards') {
+                secCards.classList.remove('hidden');
+                tabCards.className = "nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 bg-white text-slate-900 shadow-sm";
+            } else if (tabName === 'resumo') {
+                secResumo.classList.remove('hidden');
+                tabResumo.className = "nav-btn px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 bg-white text-slate-900 shadow-sm";
+            }
+        }
+
+        // Initialize App on window load
+        window.onload = function () {
+            renderQuiz();
+            updateCardDisplay();
+        };
+    </script>
+</body>
+</html>
